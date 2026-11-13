@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug CHIP-8 test ROM",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/chip8",
+      "args": ["./test/chip8-test-rom/test_opcode.ch8"],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Build CHIP-8"
+    }, 
+    {
+      "name": "Debug CHIP-8 Tetris ROM",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/chip8",
+      "args": ["./test/Tetris.ch8"],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Build CHIP-8"
+    }
+  ]
+}

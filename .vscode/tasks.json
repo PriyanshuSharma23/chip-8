@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build CHIP-8",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--build", "build", "--target", "chip8"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": ["$gcc"]
+    }
+  ]
+}
