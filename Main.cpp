@@ -14,7 +14,6 @@ int main(int argc, char **argv)
     
     const char* filepath = argv[1];
     
-    
     Chip8 chip8;
     chip8.LoadROM(filepath);
 

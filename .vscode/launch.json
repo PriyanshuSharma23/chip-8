@@ -6,7 +6,7 @@
       "type": "lldb",
       "request": "launch",
       "program": "${workspaceFolder}/build/chip8",
-      "args": ["./test/chip8-test-rom/test_opcode.ch8"],
+      "args": ["./test/test_opcode.ch8"],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "Build CHIP-8"
     }, 
