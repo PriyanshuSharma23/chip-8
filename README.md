@@ -66,5 +66,6 @@ increases slightly and peaks at 45 lines.
 
 *  A sprite XORs the current display
 
+REF: [austinmorlan's blog](https://austinmorlan.com/posts/chip8_emulator/)
 
 
