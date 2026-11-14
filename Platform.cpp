@@ -4,17 +4,34 @@
 
 Platform::Platform(char const *title, int windowWidth, int windowHeight, int textureWidth, int textureHeight)
 {
-    spdlog::info("initialising SDL platform");
+    spdlog::info(
+        "Initializing SDL platform: window={}x{}, texture={}x{}",
+        windowWidth,
+        windowHeight,
+        textureWidth,
+        textureHeight);
 
-    SDL_Init(SDL_INIT_VIDEO);
+    if (!SDL_Init(SDL_INIT_VIDEO))
+    {
+        spdlog::error("SDL video initialization failed: {}", SDL_GetError());
+        return;
+    }
 
-    SDL_CreateWindowAndRenderer(
+    spdlog::info("SDL video subsystem initialized");
+
+    if (!SDL_CreateWindowAndRenderer(
         title,
         windowWidth,
         windowHeight,
         0,
         &window,
-        &renderer);
+        &renderer))
+    {
+        spdlog::error("Failed to create SDL window and renderer: {}", SDL_GetError());
+        return;
+    }
+
+    spdlog::info("Created SDL window and renderer");
 
     texture = SDL_CreateTexture(
         renderer,
@@ -23,25 +40,50 @@ Platform::Platform(char const *title, int windowWidth, int windowHeight, int tex
         textureWidth,
         textureHeight);
 
-    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
+    if (texture == nullptr)
+    {
+        spdlog::error("Failed to create SDL texture: {}", SDL_GetError());
+        return;
+    }
+
+    if (!SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST))
+    {
+        spdlog::error("Failed to configure nearest-neighbor texture scaling: {}", SDL_GetError());
+        return;
+    }
+
+    spdlog::info("Created streaming texture with nearest-neighbor scaling");
 }
 
 Platform::~Platform()
 {
+    spdlog::info("Shutting down SDL platform");
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    SDL_Quit();
 }
 
 void Platform::Update(void *buffer, int pitch)
 {
-    SDL_UpdateTexture(
-        texture,
-        nullptr,
-        buffer,
-        pitch);
-    SDL_RenderClear(renderer);
-    SDL_RenderTexture(renderer, texture, nullptr, nullptr);
+    if (!SDL_UpdateTexture(texture, nullptr, buffer, pitch))
+    {
+        spdlog::error("Failed to update SDL texture: {}", SDL_GetError());
+        return;
+    }
+
+    if (!SDL_RenderClear(renderer))
+    {
+        spdlog::error("Failed to clear SDL renderer: {}", SDL_GetError());
+        return;
+    }
+
+    if (!SDL_RenderTexture(renderer, texture, nullptr, nullptr))
+    {
+        spdlog::error("Failed to render SDL texture: {}", SDL_GetError());
+        return;
+    }
+
     SDL_RenderPresent(renderer);
 }
 
@@ -56,6 +98,7 @@ bool Platform::ProcessInput(uint8_t *keys)
         {
         case SDL_EVENT_QUIT:
         {
+            spdlog::info("Received quit event");
             quit = true;
         }
         break;
@@ -63,6 +106,7 @@ bool Platform::ProcessInput(uint8_t *keys)
         case SDL_EVENT_KEY_DOWN:
         {
             SDL_Keycode key = event.key.key;
+            spdlog::info("Key pressed: {}", SDL_GetKeyName(key));
             switch (key)
             {
             case SDLK_X:
@@ -155,6 +199,7 @@ bool Platform::ProcessInput(uint8_t *keys)
         case SDL_EVENT_KEY_UP:
         {
             SDL_Keycode key = event.key.key;
+            spdlog::info("Key released: {}", SDL_GetKeyName(key));
             switch (key)
             {
             case SDLK_X:

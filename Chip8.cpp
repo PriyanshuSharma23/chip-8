@@ -27,6 +27,8 @@ uint8_t fontset[FONTSET_SIZE] =
 
 Chip8::Chip8()
 {
+    spdlog::info("Initializing CHIP-8 state: {} bytes of memory, {}x{} display", sizeof(memory), VIDEO_WIDTH, VIDEO_HEIGHT);
+
     pc = STARTING_ADDRESS;
     std::memcpy(memory + FONTSET_STARTING_ADDRESS, fontset, FONTSET_SIZE);
 
@@ -93,6 +95,8 @@ Chip8::Chip8()
     tableF[0x33] = &Chip8::OP_Fx33;
     tableF[0x55] = &Chip8::OP_Fx55;
     tableF[0x65] = &Chip8::OP_Fx65;
+
+    spdlog::info("CHIP-8 initialized: PC=0x{:03X}, fontset loaded at 0x{:03X}", pc, FONTSET_STARTING_ADDRESS);
 }
 
 void Chip8::LoadROM(const char *filepath)
@@ -107,21 +111,36 @@ void Chip8::LoadROM(const char *filepath)
     }
 
     std::streampos size = file.tellg();
+    if (size <= 0)
+    {
+        spdlog::error("ROM file '{}' is empty", filepath);
+        return;
+    }
+
     char *buffer = new char[size];
 
     file.seekg(std::ios::beg);
     file.read(buffer, size);
 
-    spdlog::info("copying over {} bytes to memory", (int)size);
+    if (!file)
+    {
+        spdlog::error("Failed to read ROM file '{}': {}", filepath, std::strerror(errno));
+        delete[] buffer;
+        return;
+    }
+
+    spdlog::info("Loading {} ROM bytes into memory at 0x{:03X}", static_cast<int>(size), STARTING_ADDRESS);
     std::memcpy(memory + STARTING_ADDRESS, buffer, size);
 
     delete[] buffer;
+    spdlog::info("ROM loaded successfully; execution will begin at PC=0x{:03X}", pc);
 }
 
 // CLS
 // Clear the display.
 void Chip8::OP_00E0()
 {
+    spdlog::info("Clearing display");
     std::memset(video, 0, sizeof(video));
 }
 
@@ -137,6 +156,7 @@ void Chip8::OP_00EE()
     }
     sp--;
     pc = stack[sp];
+    spdlog::info("Returning from subroutine: PC=0x{:03X}, stack depth={}", pc, sp);
 }
 
 // JP addr
@@ -161,6 +181,7 @@ void Chip8::OP_2nnn()
     stack[sp] = pc;
     sp += 1;
     pc = addr;
+    spdlog::info("Calling subroutine at 0x{:03X}; stack depth={}", addr, sp);
 }
 
 // 3xkk - SE Vx, byte
@@ -411,6 +432,13 @@ void Chip8::OP_Dxyn()
     uint8_t xPos = registers[Vx] % VIDEO_WIDTH;
     uint8_t yPos = registers[Vy] % VIDEO_HEIGHT;
 
+    spdlog::debug(
+        "Drawing {}-row sprite at ({}, {}) from memory 0x{:03X}",
+        height,
+        xPos,
+        yPos,
+        index);
+
     registers[0xF] = 0;
     for (unsigned int row = 0; row < height; ++row)
     {
@@ -485,6 +513,7 @@ void Chip8::OP_Fx0A()
         if (keypad[key])
         {
             registers[Vx] = key;
+            spdlog::info("Key wait completed: V{:X}={:X}", Vx, key);
             return;
         }
     }
@@ -498,6 +527,7 @@ void Chip8::OP_Fx15()
 {
     uint8_t Vx = (opcode & 0x0F00u) >> 8u;
     delayTimer = registers[Vx];
+    spdlog::info("Delay timer set to {} from V{:X}", delayTimer, Vx);
 }
 
 // Fx18 - LD ST, Vx
@@ -506,6 +536,7 @@ void Chip8::OP_Fx18()
 {
     uint8_t Vx = (opcode & 0x0F00u) >> 8u;
     soundTimer = registers[Vx];
+    spdlog::info("Sound timer set to {} from V{:X}", soundTimer, Vx);
 }
 
 // Fx1E - ADD I, Vx
@@ -562,8 +593,11 @@ void Chip8::OP_Fx65()
 
 void Chip8::Cycle()
 {
+    const uint16_t instructionAddress = pc;
     opcode = (memory[pc] << 8u) | memory[pc + 1];
     pc += 2;
+
+    spdlog::debug("Executing opcode 0x{:04X} at PC=0x{:03X}", opcode, instructionAddress);
 
     ((*this).*(table[(opcode & 0xF000) >> 12u]))();
 
@@ -580,4 +614,5 @@ void Chip8::Cycle()
 
 void Chip8::OP_NULL()
 {
+    spdlog::warn("Unknown or unimplemented opcode: 0x{:04X}", opcode);
 }
