@@ -1,4 +1,7 @@
 # Chip 8 Emulator
+
+![CHIP-8 emulator running Tetris](docs/screenshot.png)
+
 * Goal is to make an emulator for the 8 bit CHIP8
 * Hexadecimals begin with $* or 0x*, ex: $22 or 0x22
 
