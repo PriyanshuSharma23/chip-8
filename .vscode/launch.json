@@ -6,7 +6,7 @@
       "type": "lldb",
       "request": "launch",
       "program": "${workspaceFolder}/build/chip8",
-      "args": ["./test/test_opcode.ch8"],
+      "args": ["10", "1", "./test/test_opcode.ch8"],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "Build CHIP-8"
     }, 
@@ -15,7 +15,7 @@
       "type": "lldb",
       "request": "launch",
       "program": "${workspaceFolder}/build/chip8",
-      "args": ["./test/Tetris.ch8"],
+      "args": ["10", "3", "./test/Tetris.ch8"],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "Build CHIP-8"
     }
