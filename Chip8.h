@@ -61,9 +61,37 @@ public:
     void OP_Fx33();
     void OP_Fx55();
     void OP_Fx65();
+    void OP_NULL();
     void Cycle();
 
 private:
     std::mt19937 generator{std::random_device{}()};
     std::uniform_int_distribution<int> distribution{0, 255};
+
+    typedef void (Chip8::*Chip8Func)();
+    Chip8Func table[16];
+    Chip8Func table0[0xE + 1];
+    Chip8Func table8[0xE + 1];
+    Chip8Func tableE[0xE + 1];
+    Chip8Func tableF[0x65 + 1];
+    
+    void Table0() 
+    {
+        ((*this).*(table0[opcode & 0xF]))();
+    }
+
+    void Table8() 
+    {
+        ((*this).*(table8[opcode & 0xF]))();
+    }
+
+    void TableE() 
+    {
+        ((*this).*(tableE[opcode & 0xF]))();
+    }
+
+    void TableF() 
+    {
+        ((*this).*(tableF[opcode & 0xFF]))();
+    }
 };

@@ -29,6 +29,72 @@ Chip8::Chip8()
 {
     pc = STARTING_ADDRESS;
     std::memcpy(memory + FONTSET_STARTING_ADDRESS, fontset, FONTSET_SIZE);
+
+    // initialize tables
+    table[0x0] = &Table0;
+    table[0x1] = &OP_1nnn;
+    table[0x2] = &OP_2nnn;
+    table[0x3] = &OP_3xkk;
+    table[0x4] = &OP_4xkk;
+    table[0x5] = &OP_5xy0;
+    table[0x6] = &OP_6xkk;
+    table[0x7] = &OP_7xkk;
+    table[0x8] = &Table8;
+    table[0x9] = &OP_9xy0;
+    table[0xA] = &OP_Annn;
+    table[0xB] = &OP_Bnnn;
+    table[0xC] = &OP_Cxkk;
+    table[0xD] = &OP_Dxyn;
+    table[0xE] = &TableE;
+    table[0xF] = &TableF;
+    
+
+    // fill table 0
+    for (unsigned int i = 0; i < 0xE + 1; i++)
+    {
+        table0[i] = &OP_NULL;
+    }
+    table0[0x0] = &OP_00E0;
+    table0[0xE] = &OP_00EE;
+    
+
+    // fill table 8
+    for (unsigned int i = 0; i < 0xE + 1; i++)
+    {
+        table8[i] = &OP_NULL;
+    }
+    table8[0x0] = &OP_8xy0;
+    table8[0x1] = &OP_8xy1;
+    table8[0x2] = &OP_8xy2;
+    table8[0x3] = &OP_8xy3;
+    table8[0x4] = &OP_8xy4;
+    table8[0x5] = &OP_8xy5;
+    table8[0x6] = &OP_8xy6;
+    table8[0x7] = &OP_8xy7;
+    table8[0xE] = &OP_8xyE;
+    
+    // fill table E
+    for (unsigned int i = 0; i < 0xE + 1; i++)
+    {
+        tableE[i] = &OP_NULL;
+    }
+    tableE[0x1] = &OP_ExA1;
+    tableE[0xE] = &OP_Ex9E;
+    
+    // fill table F
+    for (unsigned int i = 0; i < 0x65 + 1; i++)
+    {
+        tableF[i] = &OP_NULL;
+    }
+    tableF[0x07] = &OP_Fx07;
+    tableF[0x0A] = &OP_Fx0A;
+    tableF[0x15] = &OP_Fx15;
+    tableF[0x18] = &OP_Fx18;
+    tableF[0x1E] = &OP_Fx1E;
+    tableF[0x29] = &OP_Fx29;
+    tableF[0x33] = &OP_Fx33;
+    tableF[0x55] = &OP_Fx55;
+    tableF[0x65] = &OP_Fx65;
 }
 
 void Chip8::LoadROM(const char *filepath)
@@ -246,7 +312,6 @@ void Chip8::OP_8xy5()
     {
         registers[0xF] = 0;
     }
-
 }
 
 // 8xy6 - SHR Vx {, Vy}
@@ -288,7 +353,7 @@ void Chip8::OP_8xy7()
 void Chip8::OP_8xyE()
 {
     uint8_t Vx = (opcode & 0x0F00u) >> 8u;
-    uint8_t shiftedValue = (registers[Vx] & 0x80) >> 7u; 
+    uint8_t shiftedValue = (registers[Vx] & 0x80) >> 7u;
     registers[Vx] <<= 1;
     registers[0xF] = shiftedValue;
 }
@@ -415,7 +480,7 @@ void Chip8::OP_Fx07()
 void Chip8::OP_Fx0A()
 {
     uint8_t Vx = (opcode & 0x0F00u) >> 8u;
-    
+
     // check for any key pressed
     for (unsigned int key = 0; key < 16; ++key)
     {
@@ -425,7 +490,7 @@ void Chip8::OP_Fx0A()
             return;
         }
     }
-    
+
     pc -= 2;
 }
 
@@ -471,13 +536,13 @@ void Chip8::OP_Fx33()
 {
     uint8_t Vx = (opcode & 0x0F00u) >> 8u;
     uint8_t value = registers[Vx];
-    
+
     memory[index + 2] = value % 10;
     value /= 10;
 
     memory[index + 1] = value % 10;
     value /= 10;
-    
+
     memory[index] = value % 10;
 }
 
@@ -498,5 +563,23 @@ void Chip8::OP_Fx65()
 }
 
 void Chip8::Cycle()
+{
+    opcode = (memory[pc] << 8u) | memory[pc + 1];
+    pc += 2;
+
+    ((*this).*(table[(opcode & 0xF000) >> 12u]))();
+
+    if (delayTimer > 0)
+    {
+        delayTimer--;
+    }
+
+    if (soundTimer > 0)
+    {
+        soundTimer--;
+    }
+}
+
+void Chip8::OP_NULL()
 {
 }
