@@ -1,12 +1,29 @@
 #include <iostream>
+#include <spdlog/async.h>
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <chrono>
 
 #include "Chip8.h"
 #include "Platform.h"
 
+namespace
+{
+    void InitializeAsyncLogging()
+    {
+        constexpr std::size_t logQueueSize = 8192;
+        spdlog::init_thread_pool(logQueueSize, 1);
+
+        // Logging must never stall the emulation loop when the console is slow.
+        auto logger = spdlog::create_async_nb<spdlog::sinks::stdout_color_sink_mt>("chip8");
+        logger->flush_on(spdlog::level::err);
+        spdlog::set_default_logger(logger);
+    }
+}
+
 int main(int argc, char **argv)
 {
+    InitializeAsyncLogging();
     spdlog::info("Starting CHIP-8 emulator");
 
     if (argc != 4)
@@ -57,6 +74,5 @@ int main(int argc, char **argv)
     }
 
     spdlog::info("Stopping emulator after {} cycles", cycleCount);
-
     return 0;
 }
